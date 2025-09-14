@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prototipo App de Ciberseguridad</title>
+
+  <!-- Favicon: tu logo -->
+  <link rel="icon" type="image/png" href="logo.png" />
+
+  <style>
+    :root{
+      /* Paleta basada en el fondo */
+      --bg:#0b0f1f;
+      --card:rgba(10,14,28,.72);
+      --card-border:#1a2440;
+      --soft:rgba(20,28,50,.75);
+      --accent:#B63DD1;         /* principal */
+      --accent-300:#D38AE3;     /* claro */
+      --accent-600:#9130A7;     /* oscuro */
+      --text:#eef2ff;
+      --muted:#a7b0c6;
+      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text);
+      /* Fondo: imagen + scrims con alpha (la foto SÍ se ve) */
+      background:
+        radial-gradient(1000px 500px at 70% -10%, rgba(182,61,209,.16), rgba(182,61,209,0) 60%),
+        linear-gradient(180deg, rgba(11,18,36,.78), rgba(15,23,42,.84) 45%),
+        url("./3194926.jpg?v=4") center / cover fixed no-repeat;
+    }
+
+    /* ---------- Header base ---------- */
+    header{
+      position:sticky; top:0; z-index:20;
+      background:rgba(6,10,24,.55);
+      backdrop-filter:saturate(140%) blur(10px);
+      border-bottom:1px solid #1a2140;
+      transition: padding .25s ease, box-shadow .25s ease;
+    }
+    .wrap{max-width:1160px; margin:auto; padding:14px 18px}
+    .brand{display:flex; gap:14px; align-items:center}
+    .title-xxs{font-weight:800;letter-spacing:.3px}
+
+    /* Logo con marco y glow */
+    .logo-wrap{
+      width:clamp(56px,8vw,82px); height:clamp(56px,8vw,82px);
+      border-radius:16px; overflow:hidden; position:relative;
+      display:grid; place-items:center;
+      background: radial-gradient(130% 130% at 30% 20%, var(--accent-300), var(--accent-600));
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 12px 34px rgba(182,61,209,.28),
+        0 2px 6px rgba(0,0,0,.35);
+      transform:translateZ(0);
+    }
+    .logo-wrap::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%);
+      pointer-events:none;
+    }
+    .uni-logo{
+      width:88%; height:auto; display:block; object-fit:contain;
+      filter:drop-shadow(0 2px 8px rgba(0,0,0,.35));
+    }
+
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+      border-radius:999px; background:rgba(8,12,28,.65);
+      border:1px solid rgba(182,61,209,.35);
+      color:var(--muted);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    nav{display:flex; gap:14px; flex-wrap:wrap; margin-top:16px}
+    nav button{
+      background:rgba(24,30,55,.85); color:var(--text); border:1px solid #293244;
+      padding:12px 18px; border-radius:14px; cursor:pointer; transition:.2s;
+      font-size:clamp(14px,1.05vw,16px);
+    }
+    nav button.active, nav button:hover{background:var(--accent); color:#fff; border-color:transparent}
+    nav button.active{ box-shadow:0 6px 18px rgba(182,61,209,.35) }
+
+    /* ---------- Layout general ---------- */
+    main{padding:24px 18px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--card-border);
+      border-radius:16px; padding:22px;
+      box-shadow:0 14px 40px rgba(0,0,0,.35);
+      max-width:1160px; margin:16px auto;
+      backdrop-filter: blur(4px);
+    }
+    h1{font-size:clamp(28px,3vw,40px); margin:0 0 6px; letter-spacing:.2px}
+    h2{font-size:20px; margin:18px 0 8px}
+    p.muted{color:var(--muted); margin-top:0}
+    .grid{display:grid; gap:14px}
+    @media(min-width:768px){
+      .grid.cols-2{grid-template-columns:1fr 1fr}
+      .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    }
+
+    /* Botones */
+    .btn{
+      display:inline-block; background:var(--accent); color:#fff; border:none; padding:10px 14px;
+      border-radius:10px; cursor:pointer; font-weight:600;
+      box-shadow:0 6px 18px rgba(182,61,209,.35);
+      transition:transform .15s ease, filter .15s ease;
+    }
+    .btn:hover{ transform:translateY(-1px); filter:saturate(110%) }
+    .btn.secondary{background:rgba(24,30,55,.85); color:var(--text); border:1px solid #2b3652}
+
+    .tip{background:rgba(10,14,28,.6); border:1px dashed #2a3860; border-radius:12px; padding:12px}
+    .hide{display:none}
+    footer{color:var(--muted); text-align:center; padding:24px}
+
+    /* ---------- Test profesional ---------- */
+    .q{padding:16px;border-radius:12px;background:rgba(12,21,44,.65);border:1px solid #1b2740}
+    .progress{height:10px;background:rgba(8,12,28,.7);border-radius:999px; border:1px solid #22314a; overflow:hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.3)}
+    .progress .bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#d08be2)}
+    .opt{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #24314a; border-radius:10px; cursor:pointer; transition:.15s; background:rgba(14,18,36,.55)}
+    .opt:hover{border-color:#2f3e5b}
+    .opt input{appearance:none; width:16px; height:16px; border-radius:50%; border:2px solid #3b4b6b; display:inline-block}
+    .opt input:checked{border-color:transparent; background: radial-gradient(closest-side, #fff 60%, transparent 61%), var(--accent)}
+    .opt:has(input:checked){border-color:transparent; outline:2px solid rgba(182,61,209,.35); background:#0f1831}
+
+    .score-wrap{margin-top:10px}
+    .meter{height:14px; background:rgba(8,12,28,.7); border:1px solid #233049; border-radius:10px; overflow:hidden}
+    .meter > span{display:block; height:100%; background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444); filter: hue-rotate(240deg)}
+    .badge{padding:6px 10px;border-radius:999px; font-size:12px; font-weight:700; display:inline-block; margin-top:8px}
+    .good{background:rgba(34,197,94,.15); color:#86efac; border:1px solid #14532d}
+    .mid{ background:rgba(245,158,11,.15); color:#fde68a; border:1px solid #78350f}
+    .bad{ background:rgba(239,68,68,.15);  color:#fecaca; border:1px solid #7f1d1d}
+    ul.clean{margin:0; padding-left:18px}
+    .warning{background:rgba(239,68,68,.12); border:1px solid #ef4444; color:#fecaca; padding:12px; border-radius:10px}
+
+    /* ---------- Tips (plegables) ---------- */
+    .tipcard{background:rgba(10,14,28,.6);border:1px solid #233049;border-radius:12px; overflow:hidden}
+    .tipcard summary{list-style:none; cursor:pointer; padding:12px 14px; font-weight:600; display:flex; justify-content:space-between; align-items:center}
+    .tipcard summary::-webkit-details-marker{display:none}
+    .tipcard .content{padding:0 14px 14px}
+
+    /* ---------- Glosario con buscador ---------- */
+    .search{display:flex; gap:8px; margin:8px 0 14px}
+    .search input{flex:1; background:rgba(10,14,28,.7); border:1px solid #233049; border-radius:10px; padding:10px 12px; color:#e5e7eb}
+    .item{padding:12px; border:1px solid #1b2740; border-radius:10px; margin-bottom:10px; background:rgba(12,21,44,.55)}
+
+    /* ---------- Foco accesible ---------- */
+    :is(button, [role="button"], a, input, summary):focus-visible{
+      outline:2px solid var(--accent-300);
+      outline-offset:2px;
+      box-shadow:0 0 0 4px rgba(182,61,209,.18);
+    }
+
+    /* ---------- Header XL + compacto al hacer scroll ---------- */
+    /* XL (ya aplicado por tamaños arriba); aquí finos ajustes */
+    .header-large .wrap{ padding:26px 24px 20px; }
+    .header-large .brand{ gap:18px; }
+    .header-large .title-xxs{ font-size:clamp(24px,2.6vw,36px); line-height:1.1; }
+
+    /* Compacto cuando bajas */
+    header.compact .wrap{ padding:12px 18px; }
+    header.compact .logo-wrap{
+      width:48px; height:48px; border-radius:12px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 10px 28px rgba(182,61,209,.22),
+        0 2px 6px rgba(0,0,0,.3);
+    }
+    header.compact .uni-logo{ width:82%; }
+    header.compact .title-xxs{ font-size:18px; }
+    header.compact nav button{
+      padding:8px 12px; font-size:14px; border-radius:10px;
+    }
+
+    /* Mobile: que no quede gigante */
+    @media (max-width: 640px){
+      .wrap{ padding:14px }
+      .header-large .wrap{ padding:18px; }
+      .logo-wrap{
+        width:64px; height:64px; border-radius:16px;
+      }
+      .title-xxs{ font-size:22px; }
+      nav{ gap:8px; }
+      nav button{ padding:10px 12px; font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header con modo XL -->
+  <header class="header-large" aria-label="Barra superior">
+    <div class="wrap">
+      <div class="brand">
+        <!-- Tu logo (PNG) -->
+        <div class="logo-wrap" aria-hidden="true">
+          <img class="uni-logo" src="./logo.png?v=2" alt="Logo Universidad" />
+        </div>
+        <div>
+          <div class="title-xxs">Prototipo App de Ciberseguridad</div>
+          <div class="pill" id="historialPill">Trend+Tech • Universidad EAN</div>
+        </div>
+      </div>
+      <nav>
+        <button class="active" data-view="home" aria-label="Ir a Inicio">Inicio</button>
+        <button data-view="test" aria-label="Ir al Test">Test de seguridad</button>
+        <button data-view="tips" aria-label="Ir a Tips">Tips rápidos</button>
+        <button data-view="glosario" aria-label="Ir al Glosario">Glosario</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- INICIO -->
+    <section id="home" class="card">
+      <h1>Bienvenidos</h1>
+      <p class="muted">Prototipo educativo para fortalecer hábitos digitales con prácticas claras y medibles.</p>
+
+      <div class="grid cols-3">
+        <div class="tip">
+          <h2>Contenido</h2>
+          <ul class="clean">
+            <li>Test con puntaje /100 y plan de mejora.</li>
+            <li>Tips accionables y verificables.</li>
+            <li>Glosario conciso para clases y práctica.</li>
+          </ul>
+        </div>
+        <div class="tip">
+          <h2>Inicio rápido</h2>
+          <p>Realiza el <b>Test de seguridad</b> y obtén tu nivel con recomendaciones priorizadas.</p>
+          <button class="btn" data-view="test">Comenzar test</button>
+        </div>
+        <div class="tip">
+          <h2>Simulaciones</h2>
+          <p>Usa el verificador de enlaces antes de hacer clic.</p>
+          <button class="btn secondary" data-action="open-checker">Abrir verificador</button>
+        </div>
+      </div>
+
+      <!-- Verificador de enlaces interactivo -->
+      <div id="checker" class="tip" style="margin-top:18px; display:none">
+        <h2>Verificador rápido de enlaces</h2>
+        <p class="muted">Ingresa una URL para analizar señales de riesgo (IP, http, punycode, @, etc.).</p>
+        <div class="search">
+          <input id="urlInput" type="url" placeholder="https://ejemplo.com/seguridad" />
+          <button class="btn" id="analyzeBtn">Analizar</button>
+        </div>
+        <div id="checkResult" class="item" style="display:none"></div>
+      </div>
+    </section>
+
+    <!-- TEST -->
+    <section id="test" class="card hide">
+      <h1>Test de seguridad</h1>
+      <p class="muted">Responde 4 preguntas. Verás tu puntuación (0–100), nivel y acciones recomendadas.</p>
+
+      <div class="progress" aria-label="Progreso del test">
+        <div class="bar" id="quizProgress"></div>
+      </div>
+
+      <div id="quiz" style="margin-top:14px"></div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="btnSubmit" disabled>Ver resultado</button>
+        <button class="btn secondary" id="btnReset">Reiniciar</button>
+      </div>
+
+      <div id="result" class="hide" style="margin-top:16px">
+        <div class="score-wrap">
+          <div class="meter" aria-hidden="true"><span id="scoreMeter" style="width:0%"></span></div>
+          <div id="scoreText" style="margin-top:6px;font-weight:700"></div>
+          <span id="levelBadge" class="badge"></span>
+        </div>
+        <h2 style="margin-top:14px">Recomendaciones</h2>
+        <ul id="recoList" class="clean"></ul>
+      </div>
+    </section>
+
+    <!-- TIPS -->
+    <section id="tips" class="card hide">
+      <h1>Tips rápidos</h1>
+      <div class="grid cols-3">
+        <details class="tipcard" open>
+          <summary>Contraseñas y gestores</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Frases de 12+ caracteres y <b>gestor</b> (Bitwarden, 1Password, etc.).</li>
+              <li>Una contraseña única por servicio.</li>
+              <li>Evita patrones obvios y datos personales.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="tipcard">
+          <summary>Autenticación en dos pasos (2FA)</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Prioriza app autenticadora sobre SMS.</li>
+              <li>Actívala en correo, banca y redes.</li>
+              <li>Guarda códigos de respaldo.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="tipcard">
+          <summary>Navegación segura</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Verifica el dominio real antes de iniciar sesión.</li>
+              <li>Evita enlaces acortados sin previsualizar.</li>
+              <li>Usa HTTPS y evita Wi-Fi públicas sin VPN.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="tipcard">
+          <summary>Actualizaciones</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Actualiza sistema y apps mensualmente.</li>
+              <li>Activa actualizaciones automáticas.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="tipcard">
+          <summary>Separación de cuentas</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Estudio, personal y compras con credenciales distintas.</li>
+              <li>Correos separados para registros.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="tipcard">
+          <summary>Respaldo de información</summary>
+          <div class="content">
+            <ul class="clean">
+              <li>Regla 3-2-1 (3 copias, 2 medios, 1 fuera).</li>
+              <li>Prueba la restauración periódicamente.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- GLOSARIO -->
+    <section id="glosario" class="card hide">
+      <h1>Glosario</h1>
+      <div class="search">
+        <input id="filterInput" type="text" placeholder="Buscar término (ej. 2FA, phishing, ransomware)"/>
+      </div>
+      <div id="glossaryList">
+        <div class="item" data-term="phishing">
+          <h2>Phishing</h2>
+          <p>Engaño para robar datos haciéndose pasar por una entidad legítima.</p>
+        </div>
+        <div class="item" data-term="2fa autenticación dos pasos">
+          <h2>2FA (Autenticación en dos pasos)</h2>
+          <p>Segundo factor (app autenticadora o SMS) además de la contraseña.</p>
+        </div>
+        <div class="item" data-term="ransomware">
+          <h2>Ransomware</h2>
+          <p>Malware que cifra archivos y exige pago por liberarlos.</p>
+        </div>
+        <div class="item" data-term="ingenieria social social engineering">
+          <h2>Ingeniería social</h2>
+          <p>Manipulación psicológica para obtener información o inducir acciones.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Prototipo académico • No recoge datos reales • © 2025
+  </footer>
+
+  <script>
+    console.log("yelsy build ✅", new Date().toLocaleString());
+
+    /* ----- Header compacto al hacer scroll ----- */
+    const headerEl = document.querySelector('header');
+    window.addEventListener('scroll', ()=>{
+      if (window.scrollY > 80) headerEl.classList.add('compact');
+      else headerEl.classList.remove('compact');
+    });
+
+    /* ----- Cambio de vistas para cualquier [data-view] ----- */
+    const views = ["home","test","tips","glosario"];
+    const navButtons = document.querySelectorAll("nav button");
+
+    function switchView(v){
+      navButtons.forEach(x=>x.classList.toggle("active", x.dataset.view===v));
+      views.forEach(id=>document.getElementById(id).classList.toggle("hide", id!==v));
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+    // Nav
+    navButtons.forEach(b=> b.addEventListener("click", ()=> switchView(b.dataset.view)));
+    // Delegado global (hace que "Comenzar test" funcione)
+    document.addEventListener("click", (e)=>{
+      const t = e.target.closest("[data-view]");
+      if(!t || t.closest("nav")) return; // nav ya manejado arriba
+      switchView(t.dataset.view);
+    });
+
+    /* ----- Inicio: verificador de enlaces ----- */
+    const openChecker = document.querySelector('[data-action="open-checker"]');
+    const checker = document.getElementById("checker");
+    openChecker?.addEventListener("click", ()=>{ checker.style.display = 'block'; checker.scrollIntoView({behavior:"smooth"}); });
+
+    const urlInput = document.getElementById("urlInput");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const checkResult = document.getElementById("checkResult");
+
+    function analyzeUrl(u){
+      let issues = [];
+      try{
+        const url = new URL(u);
+        const host = url.hostname;
+        if(url.protocol !== "https:") issues.push("No usa HTTPS.");
+        if(/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) issues.push("Usa dirección IP en lugar de dominio.");
+        if(host.includes("xn--")) issues.push("Uso de punycode (posible homógrafo).");
+        if(/@/.test(u.split("://")[1])) issues.push("Contiene '@' antes del dominio (ofuscación).");
+        const parts = host.split(".");
+        if(parts.some(p => p.length > 24)) issues.push("Subdominio excesivamente largo.");
+        if((u.match(/http/gi)||[]).length>1) issues.push("Múltiples apariciones de 'http' en la URL.");
+      }catch(e){
+        issues.push("Formato de URL no válido.");
+      }
+      return issues;
+    }
+
+    analyzeBtn?.addEventListener("click", ()=>{
+      const val = urlInput.value.trim();
+      const issues = analyzeUrl(val);
+      checkResult.style.display = "block";
+      if(!val){
+        checkResult.innerHTML = "<b>Ingresa una URL para analizar.</b>";
+        checkResult.classList.remove("warning");
+        return;
+      }
+      if(issues.length===0){
+        checkResult.classList.remove("warning");
+        checkResult.innerHTML = "<b>Sin señales evidentes de riesgo.</b> Aun así, verifica el dominio y evita iniciar sesión desde enlaces recibidos.";
+      }else{
+        checkResult.classList.add("warning");
+        checkResult.innerHTML = "<b>Señales detectadas:</b><ul class='clean' style='margin-top:6px'>"+issues.map(i=>`<li>${i}</li>`).join("")+"</ul>";
+      }
+    });
+
+    /* ----- Test ----- */
+    const questions = [
+      { q:"¿Usas la misma contraseña en varias cuentas?",
+        options:[{t:"Sí, en casi todas",score:0},{t:"En algunas",score:10},{t:"No, todas son distintas",score:25}] },
+      { q:"¿Tienes activada la autenticación en dos pasos (2FA)?",
+        options:[{t:"No",score:0},{t:"Solo en una cuenta",score:15},{t:"Sí, en todas las importantes",score:25}] },
+      { q:"¿Verificas la URL antes de hacer clic en enlaces?",
+        options:[{t:"Casi nunca",score:0},{t:"A veces",score:15},{t:"Siempre",score:25}] },
+      { q:"¿Cada cuánto actualizas sistema y apps?",
+        options:[{t:"Rara vez",score:0},{t:"Cuando me acuerdo",score:10},{t:"Automático o mensual",score:25}] }
+    ];
+
+    const quizDiv = document.getElementById("quiz");
+    const progressBar = document.getElementById("quizProgress");
+    const btnSubmit = document.getElementById("btnSubmit");
+    const btnReset = document.getElementById("btnReset");
+    const result = document.getElementById("result");
+    const scoreText = document.getElementById("scoreText");
+    const scoreMeter = document.getElementById("scoreMeter");
+    const levelBadge = document.getElementById("levelBadge");
+    const recoList = document.getElementById("recoList");
+    const pill = document.getElementById("historialPill");
+
+    function renderQuiz(){
+      quizDiv.innerHTML = "";
+      questions.forEach((item, idx)=>{
+        const box = document.createElement("div");
+        box.className = "q";
+        box.innerHTML = `<h2>Pregunta ${idx+1}</h2><p>${item.q}</p>`;
+        const opts = document.createElement("div");
+        item.options.forEach((op, j)=>{
+          const id = `q${idx}_${j}`;
+          const label = document.createElement("label");
+          label.className = "opt";
+          label.innerHTML = `<input type="radio" name="q${idx}" value="${op.score}" id="${id}" aria-label="${op.t}"><span>${op.t}</span>`;
+          opts.appendChild(label);
+        });
+        box.appendChild(opts);
+        quizDiv.appendChild(box);
+      });
+
+      quizDiv.addEventListener("change", updateProgress, {once:false});
+    }
+
+    function answeredCount(){
+      let answered = 0;
+      questions.forEach((_, i)=>{
+        if(document.querySelector(`input[name="q${i}"]:checked`)) answered++;
+      });
+      return answered;
+    }
+
+    function updateProgress(){
+      const a = answeredCount();
+      const pct = Math.round((a/questions.length)*100);
+      progressBar.style.width = pct + "%";
+      btnSubmit.disabled = (a !== questions.length);
+    }
+
+    renderQuiz();
+    updateProgress();
+
+    btnSubmit?.addEventListener("click", ()=>{
+      let score = 0;
+      questions.forEach((_, i)=>{
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        if(sel){ score += Number(sel.value); }
+      });
+
+      scoreText.textContent = `Puntuación: ${score}/100`;
+      scoreMeter.style.width = `${score}%`;
+      recoList.innerHTML = "";
+
+      levelBadge.className = "badge";
+      if(score >= 80){
+        levelBadge.classList.add("good");
+        levelBadge.textContent = "Nivel: Sólido";
+        addRecos([
+          "Mantén contraseñas únicas con gestor.",
+          "Revisa permisos de apps y elimina las que no uses.",
+          "Activa copias de seguridad automáticas."
+        ]);
+      } else if(score >= 50){
+        levelBadge.classList.add("mid");
+        levelBadge.textContent = "Nivel: Intermedio";
+        addRecos([
+          "Sustituye contraseñas duplicadas por frases largas.",
+          "Activa 2FA en correo y redes principales.",
+          "Programa actualizaciones automáticas."
+        ]);
+      } else {
+        levelBadge.classList.add("bad");
+        levelBadge.textContent = "Nivel: Riesgo";
+        addRecos([
+          "Deja de reutilizar contraseñas inmediatamente.",
+          "Activa 2FA en todas tus cuentas críticas.",
+          "No inicies sesión desde enlaces sin verificar."
+        ]);
+      }
+      result.classList.remove("hide");
+
+      // Historial en el pill superior
+      const item = {score, date: new Date().toLocaleString()};
+      localStorage.setItem("ultimoResultadoCiber", JSON.stringify(item));
+      pill && (pill.textContent = `Último test: ${score}/100 • ${item.date}`);
+      result.scrollIntoView({behavior:"smooth"});
+    });
+
+    function addRecos(arr){
+      arr.forEach(t=>{
+        const li = document.createElement("li");
+        li.textContent = t; recoList.appendChild(li);
+      });
+    }
+
+    btnReset?.addEventListener("click", ()=>{
+      renderQuiz();
+      result.classList.add("hide");
+      progressBar.style.width = "0%";
+      btnSubmit.disabled = true;
+      window.scrollTo({top:0, behavior:"smooth"});
+    });
+
+    // Mostrar último resultado si existe
+    (function(){
+      try{
+        const data = localStorage.getItem("ultimoResultadoCiber");
+        if(data){
+          const {score, date} = JSON.parse(data);
+          pill.textContent = `Último test: ${score}/100 • ${date}`;
+        }
+      }catch(e){}
+    })();
+
+    /* ----- Glosario: filtro en vivo ----- */
+    const filterInput = document.getElementById("filterInput");
+    const glossaryList = document.getElementById("glossaryList");
+    filterInput?.addEventListener("input", ()=>{
+      const q = filterInput.value.toLowerCase().trim();
+      glossaryList.querySelectorAll(".item").forEach(it=>{
+        const hay = it.dataset.term.toLowerCase().includes(q) || it.textContent.toLowerCase().includes(q);
+        it.style.display = hay ? "" : "none";
+      });
+    });
+  </script>
+</body>
+</html>
